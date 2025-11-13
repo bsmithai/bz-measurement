@@ -7,17 +7,14 @@ from datetime import datetime, timedelta
 import sys
 import requests
 
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 
-# --- Configuration ---
 MAG_URL = "https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json"
 PLASMA_URL = "https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json"
 HOURS_TO_DISPLAY = 6
 
-# Distance from L1 to Earth in kilometers
 L1_TO_EARTH_KM = 1500000
 
-# --- Plot Setup ---
 fig, ax = plt.subplots(figsize=(14, 7))
 plt.subplots_adjust(bottom=0.15)
 
@@ -62,7 +59,7 @@ def fetch_plasma_data():
                 try:
                     time_str = row[0]
                     dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S.%f")
-                    speed = row[2]  # CORRECTED: speed is column 2
+                    speed = row[2]
                     
                     if speed is not None:
                         plasma_dict[dt] = float(speed)
@@ -83,7 +80,6 @@ def merge_data(mag_dict, plasma_dict):
     bz_values = []
     speed_values = []
     
-    # Find common timestamps
     common_times = sorted(set(mag_dict.keys()) & set(plasma_dict.keys()))
     
     for dt in common_times:
@@ -122,7 +118,6 @@ def update_plot():
     if all_speeds:
         print(f"  Speed range: {min(all_speeds):.1f} - {max(all_speeds):.1f} km/s")
 
-    # Filter data to only include the last HOURS_TO_DISPLAY
     cutoff_time = datetime.utcnow() - timedelta(hours=HOURS_TO_DISPLAY)
     
     times_to_plot = []
@@ -145,22 +140,17 @@ def update_plot():
         print(f"No data in the last {HOURS_TO_DISPLAY} hours.")
         return
 
-    # Get latest measurements for info display
     latest_time = times_to_plot[-1]
     latest_bz = bz_to_plot[-1]
     latest_speed = speeds_to_plot[-1]
     latest_arrival = arrival_times[-1]
 
-    # --- Plotting ---
     ax.clear()
     
-    # Plot the main Bz line
     ax.plot(times_to_plot, bz_to_plot, label='Bz (GSM)', color='black', linewidth=1.5)
 
-    # Add a critical horizontal line at 0 nT
     ax.axhline(0, color='black', linestyle='-', linewidth=1.0)
 
-    # --- Shading ---
     zeros = [0] * len(bz_to_plot)
     
     ax.fill_between(times_to_plot, bz_to_plot, zeros, 
@@ -173,7 +163,6 @@ def update_plot():
                     facecolor='#f08080',
                     alpha=0.7, interpolate=True, label='Southward Bz (Storm Potential)')
 
-    # --- Formatting ---
     ax.set_title(f'Solar Wind Bz at L1 (Last {HOURS_TO_DISPLAY} Hours)\nMeasured: {latest_time.strftime("%Y-%m-%d %H:%M:%S")} UTC')
     ax.set_ylabel('Interplanetary Magnetic Field Bz (nanoTeslas)')
     ax.set_xlabel('Time (UTC)')
@@ -191,7 +180,6 @@ def update_plot():
     by_label = dict(zip(labels, handles))
     ax.legend(by_label.values(), by_label.keys(), loc='upper left')
 
-    # --- Info Box with Arrival Time (BOTTOM LEFT) ---
     now = datetime.utcnow()
     
     if latest_arrival:
@@ -223,7 +211,6 @@ def update_plot():
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
             family='monospace')
     
-    # Redraw the canvas
     fig.canvas.draw_idle()
     print(f"\nPlot updated at {datetime.utcnow().strftime('%H:%M:%S')} UTC")
     print(f"  Latest Bz: {latest_bz:.2f} nT | Speed: {latest_speed:.1f} km/s")
